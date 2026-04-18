@@ -39,7 +39,14 @@ const postgresUrl =
   process.env.SUPABASE_DB_URL ??
   "";
 const usePostgres = Boolean(postgresUrl);
-const pg = usePostgres ? postgres(postgresUrl, { ssl: "require", max: 1 }) : null;
+const pg = usePostgres
+  ? postgres(postgresUrl, {
+      ssl: "require",
+      max: 1,
+      // Supabase pooler can reject prepared statements in transaction mode.
+      prepare: false,
+    })
+  : null;
 
 if (process.env.VERCEL === "1" && process.env.NODE_ENV === "production" && !usePostgres) {
   throw new Error(

@@ -17,6 +17,11 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "LitterLoot",
   description: "Point. Clean. Earn.",
+  icons: {
+    icon: "/Favicon.svg",
+    shortcut: "/Favicon.svg",
+    apple: "/Favicon.png",
+  },
 };
 
 export default function RootLayout({

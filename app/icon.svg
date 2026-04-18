@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LitterLoot favicon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#6ab500" stroke-width="34"/>
+  <path d="M256 130l42 74h-84l42-74zm0 252c-41 0-74-33-74-74h42c0 18 14 32 32 32s32-14 32-32h42c0 41-33 74-74 74z" fill="#6ab500"/>
+</svg>

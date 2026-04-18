@@ -1,9 +1,24 @@
+import Image from "next/image";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-4 py-6 sm:px-6 sm:py-10">
       <section className="earth-card relative overflow-hidden rounded-3xl p-5 sm:p-7 lg:p-9">
         <div className="pointer-events-none absolute -right-24 -top-24 h-60 w-60 rounded-full bg-[var(--brand-water-soft)] blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-[var(--surface-soft)] blur-2xl" />
+
+        <div className="earth-soft relative mb-6 flex w-full items-center justify-center rounded-2xl px-4 py-3 sm:px-6 sm:py-4 lg:px-10 lg:py-5">
+          <div className="flex w-full items-center justify-center">
+            <Image
+              src="/Imagotipo.png"
+              alt="LitterLoot logo"
+              width={1200}
+              height={320}
+              priority
+              className="h-auto w-full max-w-[320px] object-contain object-center"
+            />
+          </div>
+        </div>
 
         <div className="relative grid gap-5 lg:grid-cols-[1.3fr_0.7fr] lg:items-start">
           <div>
@@ -104,6 +119,46 @@ export default function Home() {
             <p className="mt-1 text-sm font-bold sm:text-base">Earn and level up</p>
             <p className="earth-muted mt-1 text-xs leading-relaxed sm:text-sm">
               Verified missions trigger payouts and build your public cleanup achievement trail.
+            </p>
+          </article>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-4">
+          <article className="earth-soft rounded-2xl p-3.5 sm:p-4">
+            <div className="earth-card overflow-hidden rounded-xl p-2 sm:p-3">
+              <Image
+                src="/Hero.svg"
+                alt="Spot and Snap upload flow"
+                width={560}
+                height={340}
+                className="h-44 w-full object-contain sm:h-56 lg:h-64"
+              />
+            </div>
+            <p className="earth-kicker mt-3 text-[11px] font-semibold uppercase tracking-[0.12em]">
+              Spot and Snap
+            </p>
+            <p className="mt-1 text-sm font-bold sm:text-base">Upload before and after proof in seconds</p>
+            <p className="earth-muted mt-1 text-xs leading-relaxed sm:text-sm">
+              Mobile-first capture flow designed for speed in the field.
+            </p>
+          </article>
+
+          <article className="earth-soft rounded-2xl p-3.5 sm:p-4">
+            <div className="earth-card overflow-hidden rounded-xl p-2 sm:p-3">
+              <Image
+                src="/Earn.svg"
+                alt="Validated Solana reward"
+                width={560}
+                height={340}
+                className="h-44 w-full object-contain sm:h-56 lg:h-64"
+              />
+            </div>
+            <p className="earth-kicker mt-3 text-[11px] font-semibold uppercase tracking-[0.12em]">
+              Solana Reward
+            </p>
+            <p className="mt-1 text-sm font-bold sm:text-base">Get verified and receive payout instantly</p>
+            <p className="earth-muted mt-1 text-xs leading-relaxed sm:text-sm">
+              AI-validated impact plus on-chain reward creates a real action loop.
             </p>
           </article>
         </div>

@@ -1,26 +1,101 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --bg-0: #f2ebe3;
+  --bg-1: #f2ebe3;
+  --bg-2: #f2ebe3;
+  --text-strong: #111111;
+  --text-muted: #2a2a2a;
+  --card-bg: #f7f1ea;
+  --card-border: #111111;
+  --surface-soft: #efe7de;
+  --brand-green: #6ab500;
+  --brand-earth: #111111;
+  --brand-water: #6ab500;
+  --brand-water-soft: color-mix(in srgb, #6ab500 18%, #f2ebe3);
+  --ring-soft: color-mix(in srgb, #6ab500 52%, transparent);
+  --shadow-soft: 0 8px 22px color-mix(in srgb, #111111 12%, transparent);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html.dark {
+  color-scheme: dark;
+  --bg-0: #111111;
+  --bg-1: #111111;
+  --bg-2: #111111;
+  --text-strong: #f2ebe3;
+  --text-muted: #d8d2cb;
+  --card-bg: #1a1a1a;
+  --card-border: #6ab500;
+  --surface-soft: #242424;
+  --brand-green: #6ab500;
+  --brand-earth: #f2ebe3;
+  --brand-water: #6ab500;
+  --brand-water-soft: color-mix(in srgb, #6ab500 20%, #111111);
+  --ring-soft: color-mix(in srgb, #6ab500 58%, transparent);
+  --shadow-soft: 0 10px 28px color-mix(in srgb, #000000 38%, transparent);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  color: var(--text-strong);
+  background: var(--bg-0);
+}
+
+@layer components {
+  .earth-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .earth-soft {
+    background: var(--surface-soft);
+    border: 1px solid var(--card-border);
+  }
+
+  .earth-muted {
+    color: var(--text-muted);
+  }
+
+  .earth-kicker {
+    color: var(--brand-water);
+  }
+
+  .earth-primary {
+    background: var(--brand-green);
+    color: #111111;
+    transition: filter 0.18s ease, transform 0.18s ease;
+  }
+
+  .earth-primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+
+  .earth-secondary {
+    border: 1px solid color-mix(in srgb, var(--brand-earth) 80%, transparent);
+    color: var(--brand-earth);
+    background: color-mix(in srgb, var(--brand-earth) 6%, transparent);
+    transition: filter 0.18s ease, transform 0.18s ease;
+  }
+
+  .earth-secondary:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .earth-focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring-soft);
+  }
+
+  .earth-pill {
+    border: 1px solid color-mix(in srgb, var(--brand-green) 70%, var(--card-border));
+    background: color-mix(in srgb, var(--brand-green) 15%, transparent);
+    color: var(--text-strong);
+  }
 }

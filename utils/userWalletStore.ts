@@ -33,9 +33,19 @@ type WalletChallenge = {
   expiresAt: number;
 };
 
-const postgresUrl = process.env.POSTGRES_URL ?? process.env.DATABASE_URL ?? "";
+const postgresUrl =
+  process.env.POSTGRES_URL ??
+  process.env.DATABASE_URL ??
+  process.env.SUPABASE_DB_URL ??
+  "";
 const usePostgres = Boolean(postgresUrl);
 const pg = usePostgres ? postgres(postgresUrl, { ssl: "require", max: 1 }) : null;
+
+if (process.env.VERCEL === "1" && process.env.NODE_ENV === "production" && !usePostgres) {
+  throw new Error(
+    "No Postgres connection string found. Set POSTGRES_URL, DATABASE_URL, or SUPABASE_DB_URL in production."
+  );
+}
 
 let sqliteDb: Database.Database | null = null;
 

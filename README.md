@@ -229,13 +229,14 @@ Reference file: `.env.example`.
 
 - `POSTGRES_URL` (recommended in Vercel)
 - `DATABASE_URL` (fallback supported)
+- `SUPABASE_DB_URL` (alias supported for Supabase direct connection strings)
 
 ### Supabase Public Client (Optional)
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-Note: the current backend storage layer requires `POSTGRES_URL` or `DATABASE_URL` for server-side queries.
+Note: the current backend storage layer requires `POSTGRES_URL`, `DATABASE_URL`, or `SUPABASE_DB_URL` for server-side queries.
 The two `NEXT_PUBLIC_*` variables are only needed if you later add Supabase client SDK usage in frontend code.
 
 ### Optional Flags

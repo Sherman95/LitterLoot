@@ -22,6 +22,7 @@ type ChallengeResponse = {
 export default function WalletPreferences() {
   const { publicKey, connected, wallets, signMessage } = useWallet();
   const [isMounted, setIsMounted] = useState(false);
+  const [isIosExternalBrowser, setIsIosExternalBrowser] = useState(false);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(null);
   const [walletLoaded, setWalletLoaded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -38,6 +39,10 @@ export default function WalletPreferences() {
 
   useEffect(() => {
     setIsMounted(true);
+
+    if (typeof navigator !== "undefined") {
+      setIsIosExternalBrowser(detectIosExternalBrowser(navigator.userAgent));
+    }
   }, []);
 
   useEffect(() => {
@@ -145,6 +150,26 @@ export default function WalletPreferences() {
         {isMounted ? formatWalletState(solflareState) : "Checking..."}
       </p>
 
+      {isIosExternalBrowser && (
+        <div className="mt-3 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+          <p className="font-semibold text-amber-200">iOS Wallet Tip</p>
+          <p className="mt-1 text-amber-100/90">
+            If you log in with Google in one browser and connect Phantom in another app context, Auth0 can ask you to
+            sign in again. Keep login and wallet connect in the same browser session.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(window.location.href);
+              setMessage("Current URL copied. Open it in Safari and connect wallet from the same session.");
+            }}
+            className="mt-2 rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20"
+          >
+            Copy URL for Safari
+          </button>
+        </div>
+      )}
+
       <div className="mt-2 flex justify-start">
         <WalletMultiButtonNoSSR className="!h-10 !rounded-xl !bg-[var(--brand-water)] !px-4 !text-sm !font-semibold !text-white hover:!brightness-110" />
       </div>
@@ -166,6 +191,15 @@ export default function WalletPreferences() {
       {message && <p className="mt-2 text-xs text-[var(--brand-water)]">{message}</p>}
     </section>
   );
+}
+
+function detectIosExternalBrowser(userAgent: string): boolean {
+  const ua = userAgent.toLowerCase();
+  const isIos = /iphone|ipad|ipod/.test(ua);
+  if (!isIos) return false;
+
+  const isSafari = /safari/.test(ua) && !/crios|fxios|edgios|opios|mercury/.test(ua);
+  return !isSafari;
 }
 
 function formatWalletState(state: WalletReadyState | undefined): string {

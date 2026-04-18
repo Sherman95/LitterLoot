@@ -113,7 +113,7 @@ LitterLoot allows users to:
 - Auth: Auth0 via `@auth0/nextjs-auth0`.
 - AI: Google Gemini via `@google/generative-ai`.
 - Blockchain: Solana Devnet via `@solana/web3.js` and wallet adapters.
-- Database: SQLite (`better-sqlite3`).
+- Database: Neon Postgres in cloud (`@neondatabase/serverless`) with SQLite fallback for local development.
 - UI Motion: framer-motion.
 
 ## User Flow
@@ -163,7 +163,12 @@ LitterLoot allows users to:
 
 ### Persistence
 
-SQLite at `data/litterloot.db` with tables:
+Storage strategy:
+
+- Production (Vercel): Neon Postgres via `POSTGRES_URL` or `DATABASE_URL`.
+- Local fallback: SQLite at `data/litterloot.db`.
+
+Tables:
 
 - `wallet_links`
 - `wallet_challenges`
@@ -219,6 +224,19 @@ Reference file: `.env.example`.
 - `SOLANA_RPC_URL`
 - `NEXT_PUBLIC_SOLANA_RPC_URL`
 - `DEFAULT_REWARD_WALLET` (optional)
+
+### Database
+
+- `POSTGRES_URL` (recommended in Vercel)
+- `DATABASE_URL` (fallback supported)
+
+### Supabase Public Client (Optional)
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+Note: the current backend storage layer requires `POSTGRES_URL` or `DATABASE_URL` for server-side queries.
+The two `NEXT_PUBLIC_*` variables are only needed if you later add Supabase client SDK usage in frontend code.
 
 ### Optional Flags
 
@@ -329,14 +347,15 @@ Pre-deploy checklist:
 
 1. Set all required environment variables.
 2. Ensure `DEMO_MODE` is disabled in production.
-3. Run:
+3. Ensure Postgres is configured (`POSTGRES_URL` or `DATABASE_URL`) so production does not rely on local SQLite.
+4. Run:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-4. Confirm reward wallet has enough Devnet SOL for testing.
+5. Confirm reward wallet has enough Devnet SOL for testing.
 
 ## Troubleshooting
 

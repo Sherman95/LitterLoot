@@ -33,6 +33,7 @@ export default function WalletPreferences() {
   const [message, setMessage] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
   const [isStartingMobileFlow, setIsStartingMobileFlow] = useState(false);
+  const mustUseSecureMobileFlow = isIosDevice && !isPhantomInAppBrowser;
 
   const phantomState = useMemo(
     () => wallets.find((wallet) => wallet.adapter.name === "Phantom")?.readyState,
@@ -230,9 +231,18 @@ export default function WalletPreferences() {
         </div>
       )}
 
-      <div className="mt-2 flex justify-start">
-        <WalletMultiButtonNoSSR className="!h-10 !rounded-xl !bg-[var(--brand-water)] !px-4 !text-sm !font-semibold !text-white hover:!brightness-110" />
-      </div>
+      {!mustUseSecureMobileFlow && (
+        <div className="mt-2 flex justify-start">
+          <WalletMultiButtonNoSSR className="!h-10 !rounded-xl !bg-[var(--brand-water)] !px-4 !text-sm !font-semibold !text-white hover:!brightness-110" />
+        </div>
+      )}
+
+      {mustUseSecureMobileFlow && (
+        <p className="earth-muted mt-2 text-xs">
+          Direct connect is disabled in this context to prevent Auth0 session loops. Use &quot;Open Secure Flow In
+          Phantom&quot; above.
+        </p>
+      )}
 
       <label className="earth-muted mt-4 block text-xs font-semibold uppercase tracking-[0.14em]">
         Linked Wallet

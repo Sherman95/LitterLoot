@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 
 type VerifyResult = {
@@ -33,6 +32,7 @@ export default function CameraUploader({ userKey }: CameraUploaderProps) {
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(null);
   const [walletMessage, setWalletMessage] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const canVerify = useMemo(() => Boolean(beforeImage && afterImage), [beforeImage, afterImage]);
 
   useEffect(() => {
@@ -71,9 +71,14 @@ export default function CameraUploader({ userKey }: CameraUploaderProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const base64 = await readFileAsDataURL(file);
-    setter(base64);
-    setResult(null);
+    try {
+      const base64 = await readFileAsDataURL(file);
+      setter(base64);
+      setResult(null);
+      setUploadMessage(null);
+    } catch (error) {
+      setUploadMessage(error instanceof Error ? error.message : "Could not read selected image.");
+    }
   };
 
   const verifyCleanup = async () => {
@@ -154,6 +159,7 @@ export default function CameraUploader({ userKey }: CameraUploaderProps) {
         </a>
       )}
       {walletMessage && <p className="mt-2 text-xs text-[var(--brand-water)]">{walletMessage}</p>}
+      {uploadMessage && <p className="mt-2 text-xs text-rose-300">{uploadMessage}</p>}
 
       <button
         type="button"
@@ -237,31 +243,42 @@ type ImagePickerProps = {
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
+const ALLOWED_UPLOAD_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 function ImagePicker({ title, image, onChange }: ImagePickerProps) {
   return (
     <label className="earth-soft block cursor-pointer rounded-xl p-2">
       <span className="earth-muted mb-2 block text-xs font-semibold uppercase tracking-[0.14em]">{title}</span>
       <div className="earth-card flex h-28 items-center justify-center overflow-hidden rounded-lg border border-dashed text-xs">
         {image ? (
-          <Image
-            src={image}
-            alt={`${title} cleanup`}
-            width={320}
-            height={180}
-            className="h-full w-full object-cover"
-            unoptimized
-          />
+          // Native img avoids iOS Safari URL-pattern issues with data URLs from camera uploads.
+          <img src={image} alt={`${title} cleanup`} className="h-full w-full object-cover" />
         ) : (
           "Tap to add photo"
         )}
       </div>
-      <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onChange} />
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        className="hidden"
+        onChange={onChange}
+      />
     </label>
   );
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (!ALLOWED_UPLOAD_MIME_TYPES.has(file.type)) {
+      reject(
+        new Error(
+          "Unsupported image format. Please upload JPG, PNG, or WEBP. On iPhone, disable HEIF/HEIC or choose 'Most Compatible' in camera settings."
+        )
+      );
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = () => {

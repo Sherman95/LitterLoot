@@ -22,7 +22,7 @@ type ChallengeResponse = {
 export default function WalletPreferences() {
   const { publicKey, connected, wallets, signMessage } = useWallet();
   const [isMounted, setIsMounted] = useState(false);
-  const [isIosExternalBrowser, setIsIosExternalBrowser] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
   const [isPhantomInAppBrowser, setIsPhantomInAppBrowser] = useState(false);
   const [phantomDeepLink, setPhantomDeepLink] = useState<string | null>(null);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(null);
@@ -43,13 +43,13 @@ export default function WalletPreferences() {
     setIsMounted(true);
 
     if (typeof window !== "undefined" && typeof navigator !== "undefined") {
-      const isIosExternal = detectIosExternalBrowser(navigator.userAgent);
+      const isIos = detectIosDevice(navigator.userAgent);
       const isPhantomInApp = detectPhantomInAppBrowser(navigator.userAgent);
 
-      setIsIosExternalBrowser(isIosExternal);
+      setIsIosDevice(isIos);
       setIsPhantomInAppBrowser(isPhantomInApp);
 
-      if (isIosExternal) {
+      if (isIos && !isPhantomInApp) {
         setPhantomDeepLink(buildPhantomBrowseDeepLink(window.location.href));
       }
     }
@@ -160,7 +160,7 @@ export default function WalletPreferences() {
         {isMounted ? formatWalletState(solflareState) : "Checking..."}
       </p>
 
-      {isIosExternalBrowser && (
+      {isIosDevice && !isPhantomInAppBrowser && (
         <div className="mt-3 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-amber-100">
           <p className="font-semibold text-amber-200">iOS Wallet Tip</p>
           <p className="mt-1 text-amber-100/90">
@@ -231,13 +231,9 @@ export default function WalletPreferences() {
   );
 }
 
-function detectIosExternalBrowser(userAgent: string): boolean {
+function detectIosDevice(userAgent: string): boolean {
   const ua = userAgent.toLowerCase();
-  const isIos = /iphone|ipad|ipod/.test(ua);
-  if (!isIos) return false;
-
-  const isSafari = /safari/.test(ua) && !/crios|fxios|edgios|opios|mercury/.test(ua);
-  return !isSafari;
+  return /iphone|ipad|ipod/.test(ua);
 }
 
 function detectPhantomInAppBrowser(userAgent: string): boolean {

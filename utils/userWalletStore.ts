@@ -33,6 +33,15 @@ type WalletChallenge = {
   expiresAt: number;
 };
 
+export type WalletLinkAttempt = {
+  attemptId: string;
+  userSub: string;
+  challenge: string;
+  expiresAt: number;
+  usedAt?: string;
+  returnTo?: string;
+};
+
 const postgresUrl =
   process.env.POSTGRES_URL ??
   process.env.DATABASE_URL ??
@@ -73,6 +82,15 @@ if (!usePostgres) {
       user_sub TEXT PRIMARY KEY,
       challenge TEXT NOT NULL,
       expires_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wallet_link_attempts (
+      attempt_id TEXT PRIMARY KEY,
+      user_sub TEXT NOT NULL,
+      challenge TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used_at TEXT,
+      return_to TEXT
     );
 
     CREATE TABLE IF NOT EXISTS verification_history (
@@ -138,6 +156,16 @@ async function ensurePostgresSchema() {
     )`;
 
   await sql`
+    CREATE TABLE IF NOT EXISTS wallet_link_attempts (
+      attempt_id TEXT PRIMARY KEY,
+      user_sub TEXT NOT NULL,
+      challenge TEXT NOT NULL,
+      expires_at BIGINT NOT NULL,
+      used_at TIMESTAMPTZ,
+      return_to TEXT
+    )`;
+
+  await sql`
     CREATE TABLE IF NOT EXISTS verification_history (
       id TEXT PRIMARY KEY,
       user_sub TEXT NOT NULL,
@@ -172,7 +200,7 @@ function getSqliteDb(): Database.Database {
 
 function getPostgresClient() {
   if (!pg) {
-    throw new Error("Postgres client is not configured. Set POSTGRES_URL or DATABASE_URL.");
+    throw new Error("Postgres client is not configured. Set POSTGRES_URL, DATABASE_URL, or SUPABASE_DB_URL.");
   }
 
   return pg;
@@ -301,6 +329,136 @@ export async function clearWalletChallengeForUser(userSub: string): Promise<void
   }
 
   getSqliteDb().prepare("DELETE FROM wallet_challenges WHERE user_sub = ?").run(userSub);
+}
+
+export async function createWalletLinkAttemptForUser(
+  userSub: string,
+  challenge: string,
+  expiresAt: number,
+  returnTo?: string
+): Promise<WalletLinkAttempt> {
+  await ensureReady();
+
+  const attemptId = crypto.randomUUID();
+
+  if (usePostgres) {
+    const sql = getPostgresClient();
+    await sql`
+      INSERT INTO wallet_link_attempts (attempt_id, user_sub, challenge, expires_at, used_at, return_to)
+      VALUES (${attemptId}, ${userSub}, ${challenge}, ${expiresAt}, NULL, ${returnTo ?? null})
+    `;
+  } else {
+    getSqliteDb()
+      .prepare(
+        `
+          INSERT INTO wallet_link_attempts (attempt_id, user_sub, challenge, expires_at, used_at, return_to)
+          VALUES (?, ?, ?, ?, NULL, ?)
+        `
+      )
+      .run(attemptId, userSub, challenge, expiresAt, returnTo ?? null);
+  }
+
+  return {
+    attemptId,
+    userSub,
+    challenge,
+    expiresAt,
+    returnTo,
+  };
+}
+
+export async function getWalletLinkAttemptById(attemptId: string): Promise<WalletLinkAttempt | null> {
+  await ensureReady();
+
+  if (usePostgres) {
+    const sql = getPostgresClient();
+    const rows = (await sql`
+      SELECT attempt_id, user_sub, challenge, expires_at, used_at, return_to
+      FROM wallet_link_attempts
+      WHERE attempt_id = ${attemptId}
+      LIMIT 1
+    `) as Array<{
+      attempt_id: string;
+      user_sub: string;
+      challenge: string;
+      expires_at: string | number;
+      used_at: string | null;
+      return_to: string | null;
+    }>;
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      attemptId: row.attempt_id,
+      userSub: row.user_sub,
+      challenge: row.challenge,
+      expiresAt: Number(row.expires_at),
+      usedAt: row.used_at ?? undefined,
+      returnTo: row.return_to ?? undefined,
+    };
+  }
+
+  const row = getSqliteDb()
+    .prepare(
+      `
+        SELECT attempt_id, user_sub, challenge, expires_at, used_at, return_to
+        FROM wallet_link_attempts
+        WHERE attempt_id = ?
+        LIMIT 1
+      `
+    )
+    .get(attemptId) as
+    | {
+        attempt_id: string;
+        user_sub: string;
+        challenge: string;
+        expires_at: number;
+        used_at: string | null;
+        return_to: string | null;
+      }
+    | undefined;
+
+  if (!row) return null;
+
+  return {
+    attemptId: row.attempt_id,
+    userSub: row.user_sub,
+    challenge: row.challenge,
+    expiresAt: row.expires_at,
+    usedAt: row.used_at ?? undefined,
+    returnTo: row.return_to ?? undefined,
+  };
+}
+
+export async function markWalletLinkAttemptUsed(attemptId: string): Promise<boolean> {
+  await ensureReady();
+
+  const usedAt = new Date().toISOString();
+
+  if (usePostgres) {
+    const sql = getPostgresClient();
+    const rows = (await sql`
+      UPDATE wallet_link_attempts
+      SET used_at = ${usedAt}
+      WHERE attempt_id = ${attemptId} AND used_at IS NULL
+      RETURNING attempt_id
+    `) as Array<{ attempt_id: string }>;
+
+    return rows.length > 0;
+  }
+
+  const result = getSqliteDb()
+    .prepare(
+      `
+        UPDATE wallet_link_attempts
+        SET used_at = ?
+        WHERE attempt_id = ? AND used_at IS NULL
+      `
+    )
+    .run(usedAt, attemptId);
+
+  return result.changes > 0;
 }
 
 export async function addVerificationHistory(

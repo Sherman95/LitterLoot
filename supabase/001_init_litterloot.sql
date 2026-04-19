@@ -15,6 +15,16 @@ CREATE TABLE IF NOT EXISTS wallet_challenges (
   expires_at BIGINT NOT NULL
 );
 
+-- 2b) Mobile wallet link attempts (one-time)
+CREATE TABLE IF NOT EXISTS wallet_link_attempts (
+  attempt_id TEXT PRIMARY KEY,
+  user_sub TEXT NOT NULL,
+  challenge TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  used_at TIMESTAMPTZ,
+  return_to TEXT
+);
+
 -- 3) Verification history
 CREATE TABLE IF NOT EXISTS verification_history (
   id TEXT PRIMARY KEY,

@@ -19,16 +19,20 @@ type ChallengeResponse = {
   challenge: string;
 };
 
+type MobileStartResponse = {
+  deepLink: string;
+};
+
 export default function WalletPreferences() {
   const { publicKey, connected, wallets, signMessage } = useWallet();
   const [isMounted, setIsMounted] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
   const [isPhantomInAppBrowser, setIsPhantomInAppBrowser] = useState(false);
-  const [phantomDeepLink, setPhantomDeepLink] = useState<string | null>(null);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(null);
   const [walletLoaded, setWalletLoaded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isLinking, setIsLinking] = useState(false);
+  const [isStartingMobileFlow, setIsStartingMobileFlow] = useState(false);
 
   const phantomState = useMemo(
     () => wallets.find((wallet) => wallet.adapter.name === "Phantom")?.readyState,
@@ -48,12 +52,30 @@ export default function WalletPreferences() {
 
       setIsIosDevice(isIos);
       setIsPhantomInAppBrowser(isPhantomInApp);
-
-      if (isIos && !isPhantomInApp) {
-        setPhantomDeepLink(buildPhantomBrowseDeepLink(window.location.href));
-      }
     }
   }, []);
+
+  const startPhantomMobileLink = async () => {
+    if (isStartingMobileFlow) return;
+
+    setIsStartingMobileFlow(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/wallet/mobile/start?returnTo=/profile", { cache: "no-store" });
+      const data = (await response.json()) as MobileStartResponse & { error?: string };
+
+      if (!response.ok || !data.deepLink) {
+        throw new Error(data.error ?? "Could not start secure wallet link.");
+      }
+
+      window.location.href = data.deepLink;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not start secure wallet link.");
+    } finally {
+      setIsStartingMobileFlow(false);
+    }
+  };
 
   useEffect(() => {
     const loadLinkedWallet = async () => {
@@ -168,14 +190,14 @@ export default function WalletPreferences() {
             sign in again. Keep login and wallet connect in the same browser session.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {phantomDeepLink && (
-              <a
-                href={phantomDeepLink}
-                className="rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20"
-              >
-                Open This Page In Phantom
-              </a>
-            )}
+            <button
+              type="button"
+              onClick={() => void startPhantomMobileLink()}
+              disabled={isStartingMobileFlow}
+              className="rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20 disabled:opacity-60"
+            >
+              {isStartingMobileFlow ? "Opening..." : "Open Secure Flow In Phantom"}
+            </button>
             <button
               type="button"
               onClick={async () => {
@@ -239,10 +261,6 @@ function detectIosDevice(userAgent: string): boolean {
 function detectPhantomInAppBrowser(userAgent: string): boolean {
   const ua = userAgent.toLowerCase();
   return ua.includes("phantom");
-}
-
-function buildPhantomBrowseDeepLink(url: string): string {
-  return `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`;
 }
 
 function formatWalletState(state: WalletReadyState | undefined): string {

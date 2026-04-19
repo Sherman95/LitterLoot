@@ -23,6 +23,8 @@ export default function WalletPreferences() {
   const { publicKey, connected, wallets, signMessage } = useWallet();
   const [isMounted, setIsMounted] = useState(false);
   const [isIosExternalBrowser, setIsIosExternalBrowser] = useState(false);
+  const [isPhantomInAppBrowser, setIsPhantomInAppBrowser] = useState(false);
+  const [phantomDeepLink, setPhantomDeepLink] = useState<string | null>(null);
   const [linkedWallet, setLinkedWallet] = useState<string | null>(null);
   const [walletLoaded, setWalletLoaded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -40,8 +42,16 @@ export default function WalletPreferences() {
   useEffect(() => {
     setIsMounted(true);
 
-    if (typeof navigator !== "undefined") {
-      setIsIosExternalBrowser(detectIosExternalBrowser(navigator.userAgent));
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+      const isIosExternal = detectIosExternalBrowser(navigator.userAgent);
+      const isPhantomInApp = detectPhantomInAppBrowser(navigator.userAgent);
+
+      setIsIosExternalBrowser(isIosExternal);
+      setIsPhantomInAppBrowser(isPhantomInApp);
+
+      if (isIosExternal) {
+        setPhantomDeepLink(buildPhantomBrowseDeepLink(window.location.href));
+      }
     }
   }, []);
 
@@ -157,16 +167,44 @@ export default function WalletPreferences() {
             If you log in with Google in one browser and connect Phantom in another app context, Auth0 can ask you to
             sign in again. Keep login and wallet connect in the same browser session.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard.writeText(window.location.href);
-              setMessage("Current URL copied. Open it in Safari and connect wallet from the same session.");
-            }}
-            className="mt-2 rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20"
-          >
-            Copy URL for Safari
-          </button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {phantomDeepLink && (
+              <a
+                href={phantomDeepLink}
+                className="rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20"
+              >
+                Open This Page In Phantom
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  if (typeof window !== "undefined" && navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setMessage("Current URL copied. Open it in Safari and connect wallet from the same session.");
+                    return;
+                  }
+                } catch {
+                  // Fallback message when clipboard access is blocked.
+                }
+
+                setMessage("Could not copy automatically. Open this page in Safari and continue there.");
+              }}
+              className="rounded-lg border border-amber-300/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-100 hover:bg-amber-500/20"
+            >
+              Copy URL For Safari
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isPhantomInAppBrowser && (
+        <div className="mt-3 rounded-xl border border-emerald-400/40 bg-emerald-500/10 p-3 text-xs text-emerald-100">
+          <p className="font-semibold text-emerald-200">Phantom Browser Detected</p>
+          <p className="mt-1 text-emerald-100/90">
+            Great, you are already in Phantom. Complete login and wallet connect here to avoid session resets.
+          </p>
         </div>
       )}
 
@@ -200,6 +238,15 @@ function detectIosExternalBrowser(userAgent: string): boolean {
 
   const isSafari = /safari/.test(ua) && !/crios|fxios|edgios|opios|mercury/.test(ua);
   return !isSafari;
+}
+
+function detectPhantomInAppBrowser(userAgent: string): boolean {
+  const ua = userAgent.toLowerCase();
+  return ua.includes("phantom");
+}
+
+function buildPhantomBrowseDeepLink(url: string): string {
+  return `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`;
 }
 
 function formatWalletState(state: WalletReadyState | undefined): string {

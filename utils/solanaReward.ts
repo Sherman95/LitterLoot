@@ -20,6 +20,11 @@ export async function sendSolReward(recipientWallet: string, amountInSol: number
     throw new Error("Reward amount must be greater than 0 SOL.");
   }
 
+  const normalizedRecipientWallet = normalizeWalletAddress(recipientWallet);
+  if (!normalizedRecipientWallet) {
+    throw new Error("Invalid recipient wallet address.");
+  }
+
   const secret = process.env.SOLANA_REWARD_SECRET_KEY;
 
   if (!secret) {
@@ -27,7 +32,12 @@ export async function sendSolReward(recipientWallet: string, amountInSol: number
   }
 
   const fromWallet = Keypair.fromSecretKey(parseRewardSecretKey(secret));
-  const toWallet = new PublicKey(recipientWallet);
+  let toWallet: PublicKey;
+  try {
+    toWallet = new PublicKey(normalizedRecipientWallet);
+  } catch {
+    throw new Error("Invalid recipient wallet address.");
+  }
   const rpcUrl = process.env.SOLANA_RPC_URL ?? clusterApiUrl("devnet");
   const connection = new Connection(rpcUrl, "confirmed");
 
@@ -65,4 +75,11 @@ function parseRewardSecretKey(secret: string): Uint8Array {
   }
 
   return Uint8Array.from(parsed);
+}
+
+function normalizeWalletAddress(value: string): string {
+  return value
+    .trim()
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "");
 }
